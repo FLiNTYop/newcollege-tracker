@@ -1,0 +1,266 @@
+/* College Tracker — visual identity:
+   A quiet "control room" feel. Deep ink background so color is reserved
+   entirely for urgency signaling (the one thing that actually matters
+   here: what's overdue, what's today, what can wait). Monospace for
+   dates and meta because this is a tool about precise time, not a brand. */
+
+:root {
+  --ink: #14161a;
+  --panel: #1c1f25;
+  --panel-raised: #232730;
+  --line: #2c313a;
+  --text: #e8e9ec;
+  --text-dim: #8d93a0;
+  --accent: #6ea8ff;
+  --overdue: #ff6b6b;
+  --today: #ffb84d;
+  --soon: #6ea8ff;
+  --done: #5fd994;
+  --font-display: 'Georgia', 'Iowan Old Style', serif;
+  --font-mono: 'SF Mono', 'Roboto Mono', Consolas, monospace;
+  --font-body: -apple-system, 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Home / login ---------- */
+
+.home-body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 20%, #1d2129 0%, #14161a 60%);
+}
+
+.home-card {
+  max-width: 380px;
+  text-align: center;
+  padding: 48px 36px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.home-mark {
+  width: 48px; height: 48px;
+  margin: 0 auto 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #3d6fd4);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+}
+
+.home-card h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  margin: 0 0 12px;
+}
+
+.home-sub {
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 28px;
+}
+
+.btn-google {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px;
+  background: #fff;
+  color: #1f1f1f;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 9px;
+  text-decoration: none;
+}
+
+.home-foot {
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* ---------- Dashboard ---------- */
+
+.topbar {
+  display: flex; align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: sticky; top: 0; z-index: 10;
+}
+
+.topbar-mark {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), #3d6fd4);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700; font-size: 12px; color: #fff;
+}
+
+.topbar-user {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.topbar-actions {
+  margin-left: auto;
+  display: flex; gap: 10px;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-ghost:hover { border-color: var(--accent); }
+
+.btn-primary {
+  background: var(--accent);
+  border: none;
+  color: #0d1117;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.board { max-width: 760px; margin: 0 auto; padding: 36px 20px 80px; }
+
+.board-head h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  margin: 0 0 4px;
+}
+.board-sub { color: var(--text-dim); font-size: 14px; margin: 0 0 28px; }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  color: var(--text-dim);
+}
+.empty-sub { font-size: 13px; max-width: 360px; margin: 8px auto 0; }
+
+.task-list { display: flex; flex-direction: column; gap: 12px; }
+
+.task-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.task-card.urgency-overdue { border-left-color: var(--overdue); }
+.task-card.urgency-today { border-left-color: var(--today); }
+.task-card.urgency-soon { border-left-color: var(--soon); }
+
+.task-source {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.task-title { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.task-meta { margin: 0 0 8px; font-size: 13px; color: var(--text-dim); }
+.task-detail {
+  font-size: 13px; color: var(--text-dim);
+  margin: 0 0 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.task-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px;
+}
+.task-due { font-family: var(--font-mono); color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+
+.tag {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.tag-overdue { background: rgba(255,107,107,0.15); color: var(--overdue); }
+.tag-today { background: rgba(255,184,77,0.15); color: var(--today); }
+
+.task-actions { display: flex; gap: 10px; align-items: center; }
+.link-open { color: var(--accent); text-decoration: none; font-size: 13px; }
+.btn-done {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--done);
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.btn-done:hover { border-color: var(--done); }
+
+.task-card.fading { opacity: 0; transform: translateX(8px); transition: all 0.3s ease; }
+
+/* ---------- Modal ---------- */
+
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(10,11,14,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50;
+}
+.modal.hidden { display: none; }
+.modal-card {
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 420px;
+  width: 90%;
+}
+.modal-card h2 { margin: 0 0 10px; font-size: 18px; }
+.modal-sub { font-size: 13px; color: var(--text-dim); line-height: 1.5; margin: 0 0 16px; }
+.modal-sub a { color: var(--accent); }
+.topic-row { display: flex; gap: 8px; }
+#topicInput {
+  flex: 1;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.modal-status { font-size: 12px; color: var(--done); min-height: 16px; margin: 10px 0 0; }
+
+@media (max-width: 600px) {
+  .topbar { flex-wrap: wrap; }
+  .topbar-user { order: 3; width: 100%; }
+}
