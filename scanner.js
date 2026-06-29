@@ -116,7 +116,10 @@ async function scanClassroom(user) {
   const courses = coursesRes.data.courses || [];
 
   for (const course of courses) {
-    // Coursework (assignments) with due dates
+    // --- 1. Coursework: assignments, quizzes, tests ---
+    // Previously this skipped anything without a due date. We now track
+    // everything — a due date just becomes optional metadata rather than
+    // a requirement to appear at all.
     let courseWork = [];
     try {
       const cwRes = await classroom.courses.courseWork.list({ courseId: course.id });
@@ -126,7 +129,7 @@ async function scanClassroom(user) {
     }
 
     for (const work of courseWork) {
-      const taskId = `classroom_${work.id}`;
+      const taskId = `classroom_work_${work.id}`;
       const existing = db.prepare('SELECT 1 FROM tasks WHERE id = ?').get(taskId);
       if (existing) continue;
 
@@ -135,9 +138,6 @@ async function scanClassroom(user) {
         const { year, month, day } = work.dueDate;
         dueDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       }
-
-      // Only track work that has a due date (otherwise it's not time-sensitive)
-      if (!dueDate) continue;
 
       db.prepare(`
         INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified)
@@ -150,6 +150,68 @@ async function scanClassroom(user) {
         dueDate,
         course.name,
         work.alternateLink || ''
+      );
+      newTasks.push(taskId);
+    }
+
+    // --- 2. Coursework materials: notes, reading material, resources ---
+    // These never have due dates by nature, but you still want to know
+    // when a teacher uploads something new.
+    let materials = [];
+    try {
+      const matRes = await classroom.courses.courseWorkMaterials.list({ courseId: course.id });
+      materials = matRes.data.courseWorkMaterial || [];
+    } catch (e) {
+      console.warn(`Could not fetch materials for ${course.name}:`, e.message);
+    }
+
+    for (const mat of materials) {
+      const taskId = `classroom_material_${mat.id}`;
+      const existing = db.prepare('SELECT 1 FROM tasks WHERE id = ?').get(taskId);
+      if (existing) continue;
+
+      db.prepare(`
+        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified)
+        VALUES (?, ?, 'classroom', ?, ?, NULL, ?, ?, 0)
+      `).run(
+        taskId,
+        user.id,
+        mat.title ? `New material: ${mat.title}` : 'New material posted',
+        mat.description ? mat.description.slice(0, 300) : '',
+        course.name,
+        mat.alternateLink || ''
+      );
+      newTasks.push(taskId);
+    }
+
+    // --- 3. Announcements: general posts, often used for notes/reminders ---
+    let announcements = [];
+    try {
+      const annRes = await classroom.courses.announcements.list({ courseId: course.id });
+      announcements = annRes.data.announcements || [];
+    } catch (e) {
+      console.warn(`Could not fetch announcements for ${course.name}:`, e.message);
+    }
+
+    for (const ann of announcements) {
+      const taskId = `classroom_announcement_${ann.id}`;
+      const existing = db.prepare('SELECT 1 FROM tasks WHERE id = ?').get(taskId);
+      if (existing) continue;
+
+      const text = ann.text || '';
+      // Skip announcements that are clearly trivial/empty to reduce noise
+      if (!text.trim()) continue;
+
+      db.prepare(`
+        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified)
+        VALUES (?, ?, 'classroom', ?, ?, NULL, ?, ?, 0)
+      `).run(
+        taskId,
+        user.id,
+        'New announcement',
+        text.slice(0, 300),
+        course.name,
+        ann.alternateLink || ''
       );
       newTasks.push(taskId);
     }
