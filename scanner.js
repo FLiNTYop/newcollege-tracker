@@ -170,9 +170,10 @@ async function notifyNewTasks(user, taskIds) {
   for (const task of rows) {
     const dueText = task.due_date ? ` (due ${task.due_date})` : '';
     const title = task.source === 'classroom'
-      ? `📘 New Classroom task: ${task.course_or_sender}`
-      : `📧 Important email`;
-    const message = `${task.title}${dueText}`;
+      ? `New Classroom task: ${task.course_or_sender}`
+      : `Important email`;
+    const emoji = task.source === 'classroom' ? '📘' : '📧';
+    const message = `${emoji} ${task.title}${dueText}`;
 
     await sendPush(user.ntfy_topic, title, message, task.link);
 
