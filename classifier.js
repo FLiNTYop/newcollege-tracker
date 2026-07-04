@@ -18,6 +18,43 @@ const NOISE_KEYWORDS = [
   'no-reply@linkedin', 'promotion', 'congratulations you', 'win a prize'
 ];
 
+// Keyword groups used to sort an item into one of the four dashboard sections.
+// Checked in this order — first match wins — because a title like
+// "Quiz 2 submission" should land under Quizzes, not Assignments.
+const CATEGORY_KEYWORDS = {
+  quizzes: [
+    'quiz', 'exam', 'test', 'midterm', 'mid-term', 'final exam',
+    'viva', 'mcq', 'multiple choice', 'class test', 'assessment',
+    'evaluation', 'online test',
+  ],
+  assignments: [
+    'assignment', 'homework', 'submit', 'submission', 'due', 'deadline',
+    'project', 'report', 'presentation', 'lab', 'upload your',
+    'internal assessment', 'coursework',
+  ],
+  notes: [
+    'notes', 'material', 'materials', 'reading', 'resource', 'resources',
+    'syllabus', 'slides', 'ppt', 'ebook', 'reference book', 'pdf',
+    'chapter', 'handout', 'study material',
+  ],
+};
+
+/**
+ * Sort a piece of text (subject/title + body/description) into one of:
+ * 'notes' | 'assignments' | 'quizzes' | 'miscellaneous'.
+ * Falls back to 'miscellaneous' — the catch-all for circulars, results,
+ * attendance, fee reminders, general notices, etc.
+ */
+function categorize(text) {
+  const haystack = (text || '').toLowerCase();
+  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some(kw => haystack.includes(kw))) {
+      return category;
+    }
+  }
+  return 'miscellaneous';
+}
+
 // Common date phrases we try to pull out, e.g. "due on 5th July", "by 12/08", "before Monday"
 const DATE_PATTERNS = [
   /\b(due|deadline|submit(?:ted)? by|before|by)\s*(on)?\s*[:\-]?\s*(\d{1,2}(?:st|nd|rd|th)?\s+\w+(?:\s+\d{2,4})?)/i,
@@ -77,7 +114,8 @@ function classifyEmail(subject, bodyText, fromAddress, trustedDomains = []) {
       ? `matched: ${matchedKeywords.join(', ')}`
       : 'no strong signals',
     dueDateText: extractDueDateText(haystack),
+    category: categorize(haystack),
   };
 }
 
-module.exports = { classifyEmail, extractDueDateText };
+module.exports = { classifyEmail, extractDueDateText, categorize };

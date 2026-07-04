@@ -96,6 +96,14 @@ app.get('/', (req, res) => {
   res.render('home');
 });
 
+// The four dashboard sections, in the order they should appear on screen.
+const CATEGORY_SECTIONS = [
+  { key: 'assignments', label: 'Assignments' },
+  { key: 'notes', label: 'Notes' },
+  { key: 'quizzes', label: 'Quizzes' },
+  { key: 'miscellaneous', label: 'Other Notifications' },
+];
+
 app.get('/dashboard', requireLogin, (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);
   const tasks = db.prepare(`
@@ -106,7 +114,14 @@ app.get('/dashboard', requireLogin, (req, res) => {
       created_at DESC
   `).all(user.id);
 
-  res.render('dashboard', { user, tasks });
+  // Group into sections. Anything with a missing/unrecognized category
+  // (e.g. rows from before this feature existed) falls back to miscellaneous.
+  const sections = CATEGORY_SECTIONS.map(section => ({
+    ...section,
+    tasks: tasks.filter(t => (t.category || 'miscellaneous') === section.key),
+  }));
+
+  res.render('dashboard', { user, tasks, sections });
 });
 
 // --- API routes (used by the dashboard's JS) ------------------------------

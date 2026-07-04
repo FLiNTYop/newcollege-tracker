@@ -5,7 +5,7 @@
 
 const { google } = require('googleapis');
 const db = require('./db');
-const { classifyEmail } = require('./classifier');
+const { classifyEmail, categorize } = require('./classifier');
 const { getClientForUser } = require('./googleAuth');
 const { sendPush } = require('./notify');
 
@@ -85,8 +85,8 @@ async function scanGmail(user) {
       const existing = db.prepare('SELECT 1 FROM tasks WHERE id = ?').get(taskId);
       if (!existing) {
         db.prepare(`
-          INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified)
-          VALUES (?, ?, 'gmail', ?, ?, ?, ?, ?, 0)
+          INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified, category)
+          VALUES (?, ?, 'gmail', ?, ?, ?, ?, ?, 0, ?)
         `).run(
           taskId,
           user.id,
@@ -94,7 +94,8 @@ async function scanGmail(user) {
           bodyText.slice(0, 300),
           result.dueDateText,
           from,
-          `https://mail.google.com/mail/u/0/#inbox/${msgRef.id}`
+          `https://mail.google.com/mail/u/0/#inbox/${msgRef.id}`,
+          result.category
         );
         newTasks.push(taskId);
       }
@@ -139,9 +140,22 @@ async function scanClassroom(user) {
         dueDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       }
 
+      // Classroom's own workType is the strongest signal for quiz-style work
+      // (Google Forms quizzes come through as short-answer/multiple-choice).
+      // Otherwise fall back to keyword sniffing, and default to
+      // 'assignments' rather than 'miscellaneous' since this came from the
+      // Coursework API — it's graded work by definition.
+      let category;
+      if (work.workType === 'MULTIPLE_CHOICE_QUESTION' || work.workType === 'SHORT_ANSWER_QUESTION') {
+        category = 'quizzes';
+      } else {
+        const guessed = categorize(`${work.title || ''} ${work.description || ''}`);
+        category = guessed === 'miscellaneous' ? 'assignments' : guessed;
+      }
+
       db.prepare(`
-        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified)
-        VALUES (?, ?, 'classroom', ?, ?, ?, ?, ?, 0)
+        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified, category)
+        VALUES (?, ?, 'classroom', ?, ?, ?, ?, ?, 0, ?)
       `).run(
         taskId,
         user.id,
@@ -149,7 +163,8 @@ async function scanClassroom(user) {
         work.description ? work.description.slice(0, 300) : '',
         dueDate,
         course.name,
-        work.alternateLink || ''
+        work.alternateLink || '',
+        category
       );
       newTasks.push(taskId);
     }
@@ -171,8 +186,8 @@ async function scanClassroom(user) {
       if (existing) continue;
 
       db.prepare(`
-        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified)
-        VALUES (?, ?, 'classroom', ?, ?, NULL, ?, ?, 0)
+        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified, category)
+        VALUES (?, ?, 'classroom', ?, ?, NULL, ?, ?, 0, 'notes')
       `).run(
         taskId,
         user.id,
@@ -202,16 +217,22 @@ async function scanClassroom(user) {
       // Skip announcements that are clearly trivial/empty to reduce noise
       if (!text.trim()) continue;
 
+      // Announcements are usually general notices, but sometimes teachers
+      // use them to post notes or remind about an assignment/quiz — so we
+      // still sniff for keywords before falling back to miscellaneous.
+      const category = categorize(text);
+
       db.prepare(`
-        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified)
-        VALUES (?, ?, 'classroom', ?, ?, NULL, ?, ?, 0)
+        INSERT INTO tasks (id, user_id, source, title, detail, due_date, course_or_sender, link, notified, category)
+        VALUES (?, ?, 'classroom', ?, ?, NULL, ?, ?, 0, ?)
       `).run(
         taskId,
         user.id,
         'New announcement',
         text.slice(0, 300),
         course.name,
-        ann.alternateLink || ''
+        ann.alternateLink || '',
+        category
       );
       newTasks.push(taskId);
     }

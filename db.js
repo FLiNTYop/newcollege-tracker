@@ -61,6 +61,7 @@ db.exec(`
     link TEXT,
     notified INTEGER DEFAULT 0,    -- have we already pushed a notification for this?
     completed INTEGER DEFAULT 0,   -- user can mark done on the dashboard
+    category TEXT DEFAULT 'miscellaneous', -- 'notes' | 'assignments' | 'quizzes' | 'miscellaneous'
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -70,5 +71,14 @@ db.exec(`
     processed_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+// Migration for databases created before the `category` column existed.
+// SQLite has no "ADD COLUMN IF NOT EXISTS", so we just try and swallow the
+// "duplicate column" error on databases that already have it.
+try {
+  db.exec(`ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'miscellaneous'`);
+} catch (e) {
+  // Column already exists — fine, nothing to do.
+}
 
 module.exports = db;
