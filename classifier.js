@@ -22,12 +22,12 @@ const NOISE_KEYWORDS = [
 // Checked in this order — first match wins — because a title like
 // "Quiz 2 submission" should land under Quizzes, not Assignments.
 const CATEGORY_KEYWORDS = {
-  quizzes: [
+  quiz: [
     'quiz', 'exam', 'test', 'midterm', 'mid-term', 'final exam',
     'viva', 'mcq', 'multiple choice', 'class test', 'assessment',
     'evaluation', 'online test',
   ],
-  assignments: [
+  assignment: [
     'assignment', 'homework', 'submit', 'submission', 'due', 'deadline',
     'project', 'report', 'presentation', 'lab', 'upload your',
     'internal assessment', 'coursework',
