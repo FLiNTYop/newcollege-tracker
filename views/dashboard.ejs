@@ -1,105 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — College Tracker</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icons/icon-192.png">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <meta name="theme-color" content="#14161a">
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>College Tracker — Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222b;
+      --border: #2a2f3a;
+      --text: #e8eaed;
+      --muted: #9aa1ac;
+      --accent: #5b8cff;
+      --red: #ff5c5c;
+      --amber: #ffb020;
+      --green: #3ecf8e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar h1 { font-size: 18px; margin: 0; }
+    .topbar .who { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn:active { transform: scale(0.97); }
+
+    /* ---------- Mobile tab switcher (hidden on desktop) ---------- */
+    .tabbar {
+      display: none;
+      overflow-x: auto;
+      gap: 6px;
+      padding: 10px 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+    .tabbar button {
+      flex: 0 0 auto;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .tabbar button.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* ---------- Board (columns) ---------- */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      padding: 16px;
+      align-items: start;
+    }
+    .column {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 90px);
+    }
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--panel);
+      border-radius: 12px 12px 0 0;
+    }
+    .column-header h2 {
+      font-size: 14px;
+      margin: 0;
+      letter-spacing: 0.3px;
+    }
+    .count-badge {
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+    .column-body {
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .empty-hint {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px 8px;
+    }
+
+    /* ---------- Task card ---------- */
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .card.overdue { border-left-color: var(--red); }
+    .card.today   { border-left-color: var(--amber); }
+    .card.upcoming{ border-left-color: var(--green); }
+
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+      line-height: 1.35;
+    }
+    .card-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .due-pill {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+    .due-pill.overdue { background: rgba(255,92,92,0.15); color: var(--red); }
+    .due-pill.today   { background: rgba(255,176,32,0.15); color: var(--amber); }
+    .due-pill.upcoming{ background: rgba(62,207,142,0.15); color: var(--green); }
+    .due-pill.none    { background: var(--panel); color: var(--muted); }
+
+    .card-detail {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      max-height: 54px;
+      overflow: hidden;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .card-actions a, .card-actions button {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .card-actions .done-btn {
+      background: var(--green);
+      border-color: var(--green);
+      color: #0f1115;
+      font-weight: 600;
+    }
+
+    /* ---------- Responsive: phone gets tabs, one column visible ---------- */
+    @media (max-width: 860px) {
+      .tabbar { display: flex; }
+      .board {
+        grid-template-columns: 1fr;
+        padding: 10px;
+      }
+      .column { display: none; max-height: none; }
+      .column.active { display: flex; }
+    }
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-mark">CT</div>
-    <div class="topbar-user"><%= user.email %></div>
-    <div class="topbar-actions">
-      <button id="scanBtn" class="btn-ghost">Scan now</button>
-      <button id="settingsBtn" class="btn-ghost">Notifications</button>
-      <a href="/logout" class="btn-ghost">Log out</a>
+
+  <div class="topbar">
+    <div>
+      <h1>College Tracker</h1>
+      <div class="who"><%= user.email %></div>
     </div>
-  </header>
-
-  <main class="board">
-    <section class="board-head">
-      <h1>Your tasks</h1>
-      <p class="board-sub" id="taskCount"><%= tasks.length %> open item<%= tasks.length === 1 ? '' : 's' %></p>
-    </section>
-
-    <% if (tasks.length === 0) { %>
-      <div class="empty-state">
-        <p>Nothing tracked yet.</p>
-        <p class="empty-sub">Hit <strong>Scan now</strong> to check Gmail and Classroom for the first time, or just wait — it scans automatically every 15 minutes.</p>
-      </div>
-    <% } else { %>
-      <% const sectionIcons = { notes: '📝', assignments: '📌', quizzes: '❓', miscellaneous: '🔔' }; %>
-      <% sections.forEach(section => { if (section.tasks.length === 0) return; %>
-        <section class="task-section">
-          <div class="section-head">
-            <h2 class="section-title"><%= sectionIcons[section.key] %> <%= section.label %></h2>
-            <span class="section-count"><%= section.tasks.length %></span>
-          </div>
-          <div class="task-list">
-            <% section.tasks.forEach(task => { %>
-              <%
-                let urgency = 'none';
-                if (task.due_date) {
-                  const today = new Date(); today.setHours(0,0,0,0);
-                  const due = new Date(task.due_date); due.setHours(0,0,0,0);
-                  const diffDays = Math.round((due - today) / (1000*60*60*24));
-                  if (diffDays < 0) urgency = 'overdue';
-                  else if (diffDays === 0) urgency = 'today';
-                  else if (diffDays <= 3) urgency = 'soon';
-                  else urgency = 'later';
-                }
-              %>
-              <div class="task-card urgency-<%= urgency %>" data-id="<%= task.id %>">
-                <div class="task-source"><%= task.source === 'classroom' ? '📘 Classroom' : '📧 Gmail' %></div>
-                <h3 class="task-title"><%= task.title %></h3>
-                <p class="task-meta"><%= task.course_or_sender %></p>
-                <% if (task.detail) { %><p class="task-detail"><%= task.detail %></p><% } %>
-                <div class="task-foot">
-                  <span class="task-due">
-                    <% if (task.due_date) { %>
-                      Due <%= task.due_date %>
-                      <% if (urgency === 'overdue') { %><span class="tag tag-overdue">overdue</span><% } %>
-                      <% if (urgency === 'today') { %><span class="tag tag-today">today</span><% } %>
-                    <% } else { %>
-                      No due date detected
-                    <% } %>
-                  </span>
-                  <div class="task-actions">
-                    <% if (task.link) { %><a href="<%= task.link %>" target="_blank" class="link-open">Open</a><% } %>
-                    <button class="btn-done" data-id="<%= task.id %>">Done</button>
-                  </div>
-                </div>
-              </div>
-            <% }) %>
-          </div>
-        </section>
-      <% }) %>
-    <% } %>
-  </main>
-
-  <div id="settingsModal" class="modal hidden">
-    <div class="modal-card">
-      <h2>Push notifications</h2>
-      <p class="modal-sub">Install the <a href="https://ntfy.sh" target="_blank">ntfy app</a> on your phone and laptop, then subscribe to this topic name (keep it private — anyone with it can send you alerts):</p>
-      <div class="topic-row">
-        <input id="topicInput" type="text" value="<%= user.ntfy_topic %>" />
-        <button id="saveTopic" class="btn-primary">Save</button>
-      </div>
-      <p class="modal-status" id="topicStatus"></p>
-      <button id="closeModal" class="btn-ghost" style="margin-top: 16px;">Close</button>
+    <div class="topbar-actions">
+      <button class="btn secondary" id="scanBtn">Scan now</button>
+      <a class="btn secondary" href="/logout">Logout</a>
     </div>
   </div>
 
+  <!-- Tabs only appear on small screens; JS toggles which .column has .active -->
+  <div class="tabbar" id="tabbar">
+    <% sections.forEach(function(section, i) { %>
+      <button data-target="col-<%= section.key %>" class="<%= i === 0 ? 'active' : '' %>">
+        <%= section.label %> (<%= section.tasks.length %>)
+      </button>
+    <% }); %>
+  </div>
+
+  <div class="board">
+    <% sections.forEach(function(section, i) { %>
+      <div class="column <%= i === 0 ? 'active' : '' %>" id="col-<%= section.key %>">
+        <div class="column-header">
+          <h2><%= section.label %></h2>
+          <span class="count-badge"><%= section.tasks.length %></span>
+        </div>
+        <div class="column-body">
+          <% if (section.tasks.length === 0) { %>
+            <div class="empty-hint">Nothing here yet.</div>
+          <% } %>
+
+          <% section.tasks.forEach(function(task) { %>
+            <%
+              // Figure out urgency bucket in plain JS (no library needed)
+              var urgency = 'none';
+              if (task.due_date) {
+                var today = new Date();
+                today.setHours(0,0,0,0);
+                var due = new Date(task.due_date);
+                due.setHours(0,0,0,0);
+                var diffDays = Math.round((due - today) / 86400000);
+                if (diffDays < 0) urgency = 'overdue';
+                else if (diffDays === 0) urgency = 'today';
+                else urgency = 'upcoming';
+              }
+            %>
+            <div class="card <%= urgency %>" data-task-id="<%= task.id %>">
+              <% if (task.due_date) { %>
+                <span class="due-pill <%= urgency %>">
+                  <% if (urgency === 'overdue') { %>Overdue · <%= task.due_date %>
+                  <% } else if (urgency === 'today') { %>Due today
+                  <% } else { %>Due <%= task.due_date %>
+                  <% } %>
+                </span>
+              <% } else { %>
+                <span class="due-pill none">No due date</span>
+              <% } %>
+
+              <p class="card-title"><%= task.title %></p>
+              <div class="card-meta"><%= task.course_or_sender || '' %></div>
+
+              <% if (task.detail) { %>
+                <div class="card-detail"><%= task.detail %></div>
+              <% } %>
+
+              <div class="card-actions">
+                <% if (task.link) { %>
+                  <a href="<%= task.link %>" target="_blank" rel="noopener">Open</a>
+                <% } %>
+                <button class="done-btn" onclick="markDone('<%= task.id %>', this)">Done</button>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    // ---- Mobile tab switching ----
+    document.querySelectorAll('#tabbar button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#tabbar button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.column').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.target).classList.add('active');
+      });
+    });
+
+    // ---- Mark a task as done ----
+    async function markDone(taskId, btnEl) {
+      btnEl.disabled = true;
+      btnEl.textContent = '...';
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST' });
+        if (res.ok) {
+          const card = btnEl.closest('.card');
+          card.remove();
+        } else {
+          btnEl.textContent = 'Done';
+          btnEl.disabled = false;
+        }
+      } catch (err) {
+        btnEl.textContent = 'Done';
+        btnEl.disabled = false;
+      }
     }
+
+    // ---- Scan now button ----
+    document.getElementById('scanBtn').addEventListener('click', async function () {
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Scanning...';
+      try {
+        await fetch('/api/scan-now', { method: 'POST' });
+        location.reload();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Scan now';
+      }
+    });
   </script>
-  <script src="/dashboard.js"></script>
+
 </body>
 </html>
